@@ -1,0 +1,155 @@
+service: crud-serverless-usuarios
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: 'dynamodb:*'
+          Resource: arn:aws:dynamodb:us-east-1:213493402320:table/usersTable
+        - Effect: Allow
+          Action: 's3:*'
+          Resource: arn:aws:s3:::bucket-serverless-course-20231108123/*  
+  environment:
+    BUCKET: bucket-serverless-course-20231108123         
+
+#plugins:
+#  - serverless-offline
+#  - serverless-dynamodb
+
+package:
+  individually: true
+  patterns:
+    - "!.dynamodb"
+    - "!.node_modules"
+
+custom:
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+
+functions:
+  obtenerUsuarios:
+    handler: obtenerusuarios/handler.obtenerUsuarios
+    events:
+      - http:
+          path: usuarios/{id}
+          method: GET
+          request:
+            parameters:
+              paths: 
+                id: true
+
+  crearUsuarios:
+    handler: crearusuarios/handler.crearUsuarios
+    events:
+      - http:
+          path: usuarios
+          method: POST
+          request:
+            schemas:
+              application/json: ${file(schemas/userschema.json)}
+
+
+  updateUsuarios:
+    handler: updateusuarios/handler.updateUsuarios
+    events:
+      - http:
+          path: usuarios/{id}
+          method: PATCH
+          request:
+            parameters:
+              paths: 
+                id: true
+            schemas:
+              application/json: ${file(schemas/userschema.json)}
+
+  deleteUsuarios:
+    handler: deleteUsuarios/handler.deleteUsuarios
+    runtime: python3.8
+    events:
+      - http:
+          path: usuarios/{id}
+          method: DELETE
+          request:
+            parameters:
+              paths: 
+                id: true  
+
+  signedURL:
+    handler: signedurl/handler.signedS3URL
+    events:
+      - http:
+          path: signedurl
+          method: GET
+          request:
+            parameters:
+              querystrings:
+                filename: true
+
+  thumbGenerator:
+    handler: thumbnail/handler.thumbnailGenerator
+    layers:
+      - {Ref: BaseLambdaLayer}
+    package:
+      patterns:
+        - "thumbnail/handler.js"
+    events:
+      - s3:
+          bucket: bucket-serverless-course-20231108123
+          event: s3:ObjectCreated:*
+          existing: true
+          rules:
+            - prefix: uploads/
+layers:
+  base:
+    name: "prd-dependencies"
+    compatibleRuntimes:
+      - "nodejs14.x" 
+    package:
+      artifact: app/nodejs.zip 
+
+resources:
+  Resources:
+    usersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: usersTable
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    S3Bucket:
+      Type: 'AWS::S3::Bucket'
+      Properties:
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+        BucketName: bucket-serverless-course-20231108123
+    SampleBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref S3Bucket
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Action:
+                - 's3:GetObject'
+              Effect: Allow
+              Resource: !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref S3Bucket
+                  - /*
+              Principal: '*'
