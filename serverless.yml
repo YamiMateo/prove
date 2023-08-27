@@ -113,7 +113,7 @@ layers:
     compatibleRuntimes:
       - "nodejs14.x" 
     package:
-      artifact: app/nodejs.zip 
+      artifact: nodejs.zip 
 
 resources:
   Resources:
