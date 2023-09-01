@@ -14,7 +14,7 @@ jobs:
     - name: NPM - Install dependencies
       if: steps.cached-npm-dependencies-outputs.cache-hit != 'true'
       run: 'npm install'
-      
+
     - name: Run Test
       run: |
         npm run test
@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - run: 
+      - run: |
         npm install --production
         mkdir nodejs
         mv node_modules nodejs
