@@ -10,6 +10,8 @@ jobs:
     name: Build/Test
     steps:
       - uses: actions/checkout@v2
+      - name: NPM - Install dependencies
+        if: steps.cached-npm-dependencies-outputs.cache-hit != 'true'
 
       - name: Run Test
       run: |
