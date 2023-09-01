@@ -9,11 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     name: Build/Test
     steps:
-      - uses: actions/checkout@v2
-      - name: NPM - Install dependencies
+    - uses: actions/checkout@v2
+
+    - name: NPM - Install dependencies
         if: steps.cached-npm-dependencies-outputs.cache-hit != 'true'
 
-      - name: Run Test
+    - name: Run Test
       run: |
         npm run test
 
