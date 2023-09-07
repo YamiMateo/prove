@@ -3,5 +3,4 @@ node_modules
 .DS_Store
 nodejs.zip
 package-lock.json
-crearUsuarios.zip
-deleteUsuarios.zip
+
